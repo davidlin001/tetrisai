@@ -41,6 +41,7 @@
 
 from random import randrange as rand
 import pygame, sys
+import baseline
 
 # The configuration
 cell_size =	18
@@ -322,9 +323,83 @@ Press space to continue""" % self.score)
 						if event.key == eval("pygame.K_"
 						+key):
 							key_actions[key]()
-					
+
+			dont_burn_my_cpu.tick(maxfps)
+
+
+	def run_baseline(self):
+		key_actions = {
+			'ESCAPE':	self.quit,
+			'LEFT':		lambda:self.move(-1),
+			'RIGHT':	lambda:self.move(+1),
+			'DOWN':		lambda:self.drop(True),
+			'UP':		self.rotate_stone,
+			'p':		self.toggle_pause,
+			'SPACE':	self.start_game,
+			'RETURN':	self.insta_drop
+		}
+		
+		self.gameover = False
+		self.paused = False
+		
+		dont_burn_my_cpu = pygame.time.Clock()
+		while 1:
+			# THIS IS KEY FOR SPEEDING UP THE TIME STEPS
+			pygame.time.set_timer(pygame.USEREVENT+1, 10)
+			self.screen.fill((0,0,0))
+			if self.gameover:
+				self.center_msg("""Game Over!\nYour score: %d
+Press space to continue""" % self.score)
+				print self.score
+				break
+			else:
+				if self.paused:
+					self.center_msg("Paused")
+				else:
+					pygame.draw.line(self.screen,
+						(255,255,255),
+						(self.rlim+1, 0),
+						(self.rlim+1, self.height-1))
+					self.disp_msg("Next:", (
+						self.rlim+cell_size,
+						2))
+					self.disp_msg("Score: %d\n\nLevel: %d\
+\nLines: %d" % (self.score, self.level, self.lines),
+						(self.rlim+cell_size, cell_size*5))
+					self.draw_matrix(self.bground_grid, (0,0))
+					self.draw_matrix(self.board, (0,0))
+					self.draw_matrix(self.stone,
+						(self.stone_x, self.stone_y))
+					self.draw_matrix(self.next_stone,
+						(cols+1,2))
+			pygame.display.update()
+			
+			for event in pygame.event.get():
+				moves = baseline.findBestMove(self.board, self.stone, self.stone_x)
+				for move in moves:
+					key_actions[move]()
+				
+				if event.type == pygame.USEREVENT+1:
+					self.drop(False)
+				elif event.type == pygame.QUIT:
+					self.quit()
+				elif event.type == pygame.KEYDOWN:
+					#print moves
+					#print self.board, moves
+					for key in key_actions:
+						if event.key == eval("pygame.K_"
+						+key):
+							key_actions[key]()
+			#dont_burn_my_cpu.tick(10000)
 			dont_burn_my_cpu.tick(maxfps)
 
 if __name__ == '__main__':
-	App = TetrisApp()
-	App.run()
+	# Run Normally
+	#App = TetrisApp()
+	#App.run()
+
+	# Run Baseline for a certain number of trials
+	for i in range(100):
+		App = TetrisApp()
+		App.run_baseline()
+	
