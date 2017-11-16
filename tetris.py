@@ -1,11 +1,10 @@
+"""
+Primary Modifications;
+Added a run_baseline() method (with modified fps time)
+Run baseline tests in main
+"""
 #!/usr/bin/env python2
 #-*- coding: utf-8 -*-
-
-# NOTE FOR WINDOWS USERS:
-# You can download a "exefied" version of this game at:
-# http://hi-im.laria.me/progs/tetris_py_exefied.zip
-# If a DLL is missing or something like this, write an E-Mail (me@laria.me)
-# or leave a comment on this gist.
 
 # Very simple tetris implementation
 # 
