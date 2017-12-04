@@ -314,7 +314,7 @@ Press space to continue""" % self.score)
 			pygame.display.update()
 			
 			for event in pygame.event.get():
-				print tetrisai.extractFeatures(self.board)
+				#print tetrisai.extractFeatures(self.board)
 				if event.type == pygame.USEREVENT+1:
 					self.drop(False)
 				elif event.type == pygame.QUIT:
