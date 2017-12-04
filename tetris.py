@@ -270,6 +270,58 @@ class TetrisApp(object):
 			self.init_game()
 			self.gameover = False
 	
+	def train_evaluation_function(self, board, piece, actions):
+		key_actions = {
+			'ESCAPE':	self.quit,
+			'LEFT':		lambda:self.move(-1),
+			'RIGHT':	lambda:self.move(+1),
+			'DOWN':		lambda:self.drop(True),
+			'UP':		self.rotate_stone,
+			'p':		self.toggle_pause,
+			'SPACE':	self.start_game,
+			'RETURN':	self.insta_drop
+		}
+
+		weights = [0]*15
+		def td_learning(weights, action):
+			tetrisai.ext
+			eta = 0.001
+			discount = 1
+
+			prev_dot_product = 0
+			for i in range(len(weights)):
+				prev_dot_product += weights[i]*features[i]
+			prev_score = self.score
+
+			def translate(action):
+
+
+			newList = translate(action)
+			for element in newList:
+				key_actions[element]
+
+			new_score = self.score
+			reward = new_score - prev_score	
+
+			newFeatures = [2,3,4]
+			new_dot_product = 0
+			for i in range(len(weights)):
+				new_dot_product += weights[i]*newFeatures[i]
+
+			for index, weight in enumerate(weights):
+				weights[index] = weight - eta*(prev_dot_product - (reward + discount*new_dot_product))*features[index]
+
+		for action in actions:
+			td_learning(weights, action)	
+
+		return weights
+
+	def test_evaluation_function(self, weights, features):
+		return sum([weights[i]*features[i] for i in range(len(weights))])	
+
+	def run_td(self):
+
+	
 	def run(self):
 		key_actions = {
 			'ESCAPE':	self.quit,
@@ -314,7 +366,6 @@ Press space to continue""" % self.score)
 			pygame.display.update()
 			
 			for event in pygame.event.get():
-				print tetrisai.extractFeatures(self.board)
 				if event.type == pygame.USEREVENT+1:
 					self.drop(False)
 				elif event.type == pygame.QUIT:
@@ -396,11 +447,11 @@ Press space to continue""" % self.score)
 
 if __name__ == '__main__':
 	# Run Normally
-	App = TetrisApp()
-	App.run()
+	#App = TetrisApp()
+	#App.run()
 
 	# Run Baseline for a certain number of trials
-	#for i in range(250):
-	#	App = TetrisApp()
-	#	App.run_baseline()
+	for i in range(250):
+		App = TetrisApp()
+		App.run_baseline()
 	
