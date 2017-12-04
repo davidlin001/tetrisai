@@ -41,6 +41,7 @@ Run baseline tests in main
 from random import randrange as rand
 import pygame, sys
 import baseline
+import tetrisai
 
 # The configuration
 cell_size =	18
@@ -313,6 +314,7 @@ Press space to continue""" % self.score)
 			pygame.display.update()
 			
 			for event in pygame.event.get():
+				#print tetrisai.extractFeatures(self.board)
 				if event.type == pygame.USEREVENT+1:
 					self.drop(False)
 				elif event.type == pygame.QUIT:
@@ -394,11 +396,11 @@ Press space to continue""" % self.score)
 
 if __name__ == '__main__':
 	# Run Normally
-	#App = TetrisApp()
-	#App.run()
+	App = TetrisApp()
+	App.run()
 
 	# Run Baseline for a certain number of trials
-	for i in range(250):
-		App = TetrisApp()
-		App.run_baseline()
+	#for i in range(250):
+	#	App = TetrisApp()
+	#	App.run_baseline()
 	
