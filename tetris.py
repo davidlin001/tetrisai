@@ -349,7 +349,7 @@ Press space to continue""" % self.score)
 			if self.gameover:
 				self.center_msg("""Game Over!\nYour score: %d
 Press space to continue""" % self.score)
-				print self.score
+				print "SCORE", self.score, "LINES", self.lines
 				break
 			else:
 				if self.paused:
@@ -398,7 +398,7 @@ if __name__ == '__main__':
 	#App.run()
 
 	# Run Baseline for a certain number of trials
-	for i in range(100):
+	for i in range(250):
 		App = TetrisApp()
 		App.run_baseline()
 	
