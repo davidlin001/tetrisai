@@ -44,7 +44,6 @@ import baseline
 
 # The configuration
 cell_size =	18
-hi = 1
 cols =		10
 rows =		22
 maxfps = 	30
