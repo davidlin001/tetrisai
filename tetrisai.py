@@ -23,7 +23,6 @@ def extractFeatures(board):
 			if found_top and board[row][col] == 0:
 				numHoles += 1
 
-
 	maxHeight = max(heights)
 	minHeight = min(heights)
 	meanHeight = np.average(heights)
