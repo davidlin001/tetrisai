@@ -2,7 +2,7 @@ import pygame, sys
 import tetris
 import numpy as np
 
-def extractFeatures(board):
+def extractFeatures(board, piece):
 
 	numBlocks = 0 
 	b_width = len(board[0])

@@ -39,6 +39,7 @@ Run baseline tests in main
 # THE SOFTWARE.
 
 from random import randrange as rand
+import random
 import pygame, sys
 import baseline
 import tetrisai
@@ -270,7 +271,7 @@ class TetrisApp(object):
 			self.init_game()
 			self.gameover = False
 	
-	def train_evaluation_function(self, board, piece, actions):
+	def train_evaluation_function(self):
 		key_actions = {
 			'ESCAPE':	self.quit,
 			'LEFT':		lambda:self.move(-1),
@@ -282,44 +283,155 @@ class TetrisApp(object):
 			'RETURN':	self.insta_drop
 		}
 
-		weights = [0]*15
-		def td_learning(weights, action):
-			tetrisai.ext
-			eta = 0.001
-			discount = 1
+		# EDIT THIS LATER!!!
+		weights = [0]*12
+		def td_learning(self, weights):
+			self.gameover = False
+			self.paused = False
 
-			prev_dot_product = 0
-			for i in range(len(weights)):
-				prev_dot_product += weights[i]*features[i]
-			prev_score = self.score
+			while not self.gameover:
+				self.stone = self.next_stone
+				self.stone_x = int(cols/2 - len(self.stone[0])/2)
+				self.stone_y = 0
+				if (check_collision(self.board, self.stone, (self.stone_x, self.stone_y))):
+					self.gameover = True 
+					return weights 
 
-			def translate(action):
+				features = tetrisai.extractFeatures(self.board, self.stone)
+				eta = 0.001
+				discount = 1
 
+				prev_dot_product = 0
+				for i in range(len(weights)):
+					prev_dot_product += weights[i]*features[i]
+				prev_score = self.score
 
-			newList = translate(action)
-			for element in newList:
-				key_actions[element]
+				# Random number of rotations
+				numRotations = random.randint(0,3)
+				for i in range(numRotations):
+					key_actions["UP"]()
+				
+				# Random left right translation
+				if random.randint(0,1) == 0:
+					range_left = self.stone_x 
+					for i in range(random.randint(0,range_left)):
+						key_actions['LEFT']()
+				else:
+					range_right = len(self.board[0]) - (self.stone_x + len(self.stone[0]))
+					for i in range(random.randint(0,range_left)):
+						key_actions['RIGHT']()
+				key_actions['RETURN']()
 
-			new_score = self.score
-			reward = new_score - prev_score	
+				new_score = self.score
+				reward = new_score - prev_score	
 
-			newFeatures = [2,3,4]
-			new_dot_product = 0
-			for i in range(len(weights)):
-				new_dot_product += weights[i]*newFeatures[i]
+				self.next_stone = tetris_shapes[rand(len(tetris_shapes))]
 
-			for index, weight in enumerate(weights):
-				weights[index] = weight - eta*(prev_dot_product - (reward + discount*new_dot_product))*features[index]
+				newFeatures = tetrisai.extractFeatures(self.board, self.next_stone)
+				new_dot_product = 0
+				for i in range(len(weights)):
+					new_dot_product += weights[i]*newFeatures[i]
 
-		for action in actions:
-			td_learning(weights, action)	
+				for index, weight in enumerate(weights):
+					weights[index] = weight - eta*(prev_dot_product - (reward + discount*new_dot_product))*features[index]
+					print weights
+
+		td_learning(self, weights)	
 
 		return weights
 
 	def test_evaluation_function(self, weights, features):
 		return sum([weights[i]*features[i] for i in range(len(weights))])	
 
-	def run_td(self):
+	def run_greedy():
+		key_actions = {
+			'ESCAPE':	self.quit,
+			'LEFT':		lambda:self.move(-1),
+			'RIGHT':	lambda:self.move(+1),
+			'DOWN':		lambda:self.drop(True),
+			'UP':		self.rotate_stone,
+			'p':		self.toggle_pause,
+			'SPACE':	self.start_game,
+			'RETURN':	self.insta_drop
+		}
+		
+		self.gameover = False
+		self.paused = False
+		
+		dont_burn_my_cpu = pygame.time.Clock()
+		while 1:
+			# THIS IS KEY FOR SPEEDING UP THE TIME STEPS
+			pygame.time.set_timer(pygame.USEREVENT+1, 10)
+			self.screen.fill((0,0,0))
+			if self.gameover:
+				self.center_msg("""Game Over!\nYour score: %d
+Press space to continue""" % self.score)
+				print "SCORE", self.score, "LINES", self.lines
+				break
+			else:
+				if self.paused:
+					self.center_msg("Paused")
+				else:
+					pygame.draw.line(self.screen,
+						(255,255,255),
+						(self.rlim+1, 0),
+						(self.rlim+1, self.height-1))
+					self.disp_msg("Next:", (
+						self.rlim+cell_size,
+						2))
+					self.disp_msg("Score: %d\n\nLevel: %d\
+\nLines: %d" % (self.score, self.level, self.lines),
+						(self.rlim+cell_size, cell_size*5))
+					self.draw_matrix(self.bground_grid, (0,0))
+					self.draw_matrix(self.board, (0,0))
+					self.draw_matrix(self.stone,
+						(self.stone_x, self.stone_y))
+					self.draw_matrix(self.next_stone,
+						(cols+1,2))
+			pygame.display.update()
+			
+			numRotations = random.randint(0,3)
+			for i in range(numRotations):
+				key_actions["UP"]()
+				
+			# Random left right translation
+			range_left = self.stone_x 
+			range_right = len(self.board[0]) - (self.stone_x + len(self.stone[0]))
+			total_range = range_left + range_right
+			for j in range(total_range)
+				if j < range_left:
+					for i in range(j):
+						key_actions['LEFT']()
+				else:
+					for k in range(j - range_left):
+						key_actions['RIGHT']()
+			key_actions['RETURN']()
+
+			# Recursive backtracking every possible action sequence
+			# Given action sequence, execute, revert, record evaluation score
+
+			"""
+			for event in pygame.event.get():
+
+				moves = baseline.findBestMove(self.board, self.stone, self.stone_x)
+				for move in moves:
+					key_actions[move]()
+				
+				if event.type == pygame.USEREVENT+1:
+					self.drop(False)
+				elif event.type == pygame.QUIT:
+					self.quit()
+				elif event.type == pygame.KEYDOWN:
+					#print moves
+					#print self.board, moves
+					for key in key_actions:
+						if event.key == eval("pygame.K_"
+						+key):
+							key_actions[key]()
+			#dont_burn_my_cpu.tick(10000)
+			"""
+			dont_burn_my_cpu.tick(maxfps)
+	#def run_depth(depth, ):		
 
 	
 	def run(self):
@@ -447,11 +559,15 @@ Press space to continue""" % self.score)
 
 if __name__ == '__main__':
 	# Run Normally
-	#App = TetrisApp()
+	App = TetrisApp()
+	weights = App.train_evaluation_function()
+	print "FINAL", weights
+
+	run_greedy()
 	#App.run()
 
 	# Run Baseline for a certain number of trials
-	for i in range(250):
-		App = TetrisApp()
-		App.run_baseline()
+	#for i in range(250):
+	#	App = TetrisApp()
+	#	App.run_baseline()
 	

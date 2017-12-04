@@ -182,7 +182,8 @@ class TetrisTD(object):
 		for action in actions:
 			key_actions[action]
 
-		new_score = self.score	
+		new_score = self.score
+		reward = new_score - prev_score	
 
 		newFeatures = [2,3,4]
 		new_dot_product = 0
@@ -190,7 +191,7 @@ class TetrisTD(object):
 			new_dot_product += weights[i]*newFeatures[i]
 
 		for index, weight in enumerate(weights):
-			weights[index] = weight - eta*(prev_dot_product - (new_score - prev_score + discount*new_dot_product))*features[index]
+			weights[index] = weight - eta*(prev_dot_product - (reward + discount*new_dot_product))*features[index]
 
 
 
