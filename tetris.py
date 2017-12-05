@@ -272,7 +272,7 @@ class TetrisApp(object):
 			self.init_game()
 			self.gameover = False
 	
-	def train_evaluation_function(self):
+	def td_learning(self, weights):
 		key_actions = {
 			'ESCAPE':	self.quit,
 			'LEFT':		lambda:self.move(-1),
@@ -283,62 +283,83 @@ class TetrisApp(object):
 			'SPACE':	self.start_game,
 			'RETURN':	self.insta_drop
 		}
+		self.board = new_board()
+		print self.board
+		'''
+		pygame.init()
+		self.width = cell_size*(cols+6)
+		self.height = cell_size*rows
+		self.rlim = cell_size*cols
+		self.init_game()
+		'''
+		self.gameover = False
+		self.paused = False
 
+		while not self.gameover:
+			self.stone = self.next_stone
+			self.stone_x = int(cols/2 - len(self.stone[0])/2)
+			self.stone_y = 0
+			if (check_collision(self.board, self.stone, (self.stone_x, self.stone_y))):
+				self.gameover = True 
+				return weights 
+
+			features = tetrisai.extractFeatures(self.board, self.stone)
+			eta = 0.01
+			discount = 1
+
+			prev_dot_product = 0
+			for i in range(len(weights)):
+				prev_dot_product += weights[i]*features[i]
+			prev_score = self.score
+
+			moves = baseline.findBestMove(self.board, self.stone, self.stone_x)
+			for move in moves:
+				key_actions[move]()
+			'''
+			# Random number of rotations
+			numRotations = random.randint(0,3)
+			for i in range(numRotations):
+				key_actions["UP"]()
+			
+			# Random left right translation
+			if random.randint(0,1) == 0:
+				range_left = self.stone_x 
+				for i in range(random.randint(0,range_left)):
+					key_actions['LEFT']()
+			else:
+				range_right = len(self.board[0]) - (self.stone_x + len(self.stone[0]))
+				for i in range(random.randint(0,range_right)):
+					key_actions['RIGHT']()
+			key_actions['RETURN']() '''
+
+			new_score = self.score
+			reward = new_score - prev_score	
+
+			self.next_stone = tetris_shapes[rand(len(tetris_shapes))]
+
+			newFeatures = tetrisai.extractFeatures(self.board, self.next_stone)
+			new_dot_product = 0
+			for i in range(len(weights)):
+				new_dot_product += weights[i]*newFeatures[i]
+
+			print prev_dot_product, new_dot_product
+			for index, weight in enumerate(weights):
+				weights[index] = weight - eta*(prev_dot_product - (reward + discount*new_dot_product))*features[index]
+			sumWeights = sum(weights) + .01
+			weights = [weight*1.0/sumWeights for weight in weights]
+			print "Features", features
+			print "WEIGHTS", weights
+		return weights
+
+	def train_evaluation_function(self):
 		# EDIT THIS LATER!!!
 		weights = [0]*12
-		def td_learning(self, weights):
-			self.gameover = False
-			self.paused = False
-
-			while not self.gameover:
-				self.stone = self.next_stone
-				self.stone_x = int(cols/2 - len(self.stone[0])/2)
-				self.stone_y = 0
-				if (check_collision(self.board, self.stone, (self.stone_x, self.stone_y))):
-					self.gameover = True 
-					return weights 
-
-				features = tetrisai.extractFeatures(self.board, self.stone)
-				eta = 0.001
-				discount = 1
-
-				prev_dot_product = 0
-				for i in range(len(weights)):
-					prev_dot_product += weights[i]*features[i]
-				prev_score = self.score
-
-				# Random number of rotations
-				numRotations = random.randint(0,3)
-				for i in range(numRotations):
-					key_actions["UP"]()
-				
-				# Random left right translation
-				if random.randint(0,1) == 0:
-					range_left = self.stone_x 
-					for i in range(random.randint(0,range_left)):
-						key_actions['LEFT']()
-				else:
-					range_right = len(self.board[0]) - (self.stone_x + len(self.stone[0]))
-					for i in range(random.randint(0,range_right)):
-						key_actions['RIGHT']()
-				key_actions['RETURN']()
-
-				new_score = self.score
-				reward = new_score - prev_score	
-
-				self.next_stone = tetris_shapes[rand(len(tetris_shapes))]
-
-				newFeatures = tetrisai.extractFeatures(self.board, self.next_stone)
-				new_dot_product = 0
-				for i in range(len(weights)):
-					new_dot_product += weights[i]*newFeatures[i]
-
-				for index, weight in enumerate(weights):
-					weights[index] = weight - eta*(prev_dot_product - (reward + discount*new_dot_product))*features[index]
-					print weights
-
-		td_learning(self, weights)	
-
+		numGames = 10
+		for i in range(numGames):
+			print "GAME", i
+			weights = self.td_learning(weights)	
+		
+		#weights = td_learning(self, weights)
 		return weights
 
 	def test_evaluation_function(self, weights, features):
@@ -379,7 +400,7 @@ class TetrisApp(object):
 		self.stone = original_stone
 		#print "new board"
 		#print self.board
-		if score > bestScore:
+		if score < bestScore:
 			return score, actionSequence
 		else: 
 			return bestScore, bestSequence
@@ -395,7 +416,7 @@ class TetrisApp(object):
 			'SPACE':	self.start_game,
 			'RETURN':	self.insta_drop
 		}
-		self.board = newboard()
+		self.board = new_board()
 		self.score = 0 
 		self.gameover = False
 		self.paused = False
@@ -432,79 +453,48 @@ Press space to continue""" % self.score)
 						(cols+1,2))
 			pygame.display.update()
 			
-			'''
-			# Number of possible rotations, and translations
-			range_rotations = 3
-			range_left = self.stone_x 
-			range_right = len(self.board[0]) - (self.stone_x + len(self.stone[0]))
-
-			# Find best action sequence and its corresponding evaluation functino score
-			bestScore = 0
-			bestSequence = [] 
-			actionSequence = [] 
-
-			bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-			for i in range(range_left):
-				actionSequence.append("LEFT")
-				bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-				for j in range(range_rotations):
-					actionSequence.append("UP")
-					bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-				actionSequence = actionSequence[0:len(actionSequence) - range_rotations]
-			actionSequence = [] 
-			for i in range(range_right):
-				actionSequence.append("RIGHT")
-				bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-				for j in range(range_rotations):
-					actionSequence.append("UP")
-					bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-				actionSequence = actionSequence[0:len(actionSequence) - range_rotations]
-
-			bestSequence.append("RETURN")
-			for move in bestSequence:
-				key_actions[move]()
-			'''
-
 			# Recursive backtracking every possible action sequence
 			# Given action sequence, execute, revert, record evaluation score
 
 			for event in pygame.event.get():
-				# Number of possible rotations, and translations
-				range_rotations = 3
-				range_left = self.stone_x 
-				range_right = len(self.board[0]) - (self.stone_x + len(self.stone[0]))
+				#if event.type == pygame.USEREVENT+1:
+				#	self.drop(False)
+				#elif event.type == pygame.QUIT:
+				#	self.quit()
+				if event.type == pygame.KEYDOWN:
+					print "Current board"
+					print self.board
+					# Number of possible rotations, and translations
+					range_rotations = 3
+					range_left = self.stone_x 
+					range_right = len(self.board[0]) - (self.stone_x + len(self.stone[0]))
 
-				# Find best action sequence and its corresponding evaluation functino score
-				bestScore = 0
-				bestSequence = [] 
-				actionSequence = [] 
+					# Find best action sequence and its corresponding evaluation functino score
+					bestScore = 999999999999999
+					bestSequence = [] 
+					actionSequence = [] 
 
-				bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-				for i in range(range_left):
-					actionSequence.append("LEFT")
 					bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-					for j in range(range_rotations):
-						actionSequence.append("UP")
+					for i in range(range_left):
+						actionSequence.append("LEFT")
 						bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-					actionSequence = actionSequence[0:len(actionSequence) - range_rotations]
-				actionSequence = [] 
-				for i in range(range_right):
-					actionSequence.append("RIGHT")
-					bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-					for j in range(range_rotations):
-						actionSequence.append("UP")
+						for j in range(range_rotations):
+							actionSequence.append("UP")
+							bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+						actionSequence = actionSequence[0:len(actionSequence) - range_rotations]
+					actionSequence = [] 
+					for i in range(range_right):
+						actionSequence.append("RIGHT")
 						bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
-					actionSequence = actionSequence[0:len(actionSequence) - range_rotations]
+						for j in range(range_rotations):
+							actionSequence.append("UP")
+							bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+						actionSequence = actionSequence[0:len(actionSequence) - range_rotations]
 
-				bestSequence.append("RETURN")
-				for move in bestSequence:
-					key_actions[move]()
-				print "MOVESSSS"
-				if event.type == pygame.USEREVENT+1:
-					self.drop(False)
-				elif event.type == pygame.QUIT:
-					self.quit()
-				elif event.type == pygame.KEYDOWN:
+					bestSequence.append("RETURN")
+					for move in bestSequence:
+						key_actions[move]()
+					print "Executed: ", bestSequence, self.score
 					#print moves
 					#print self.board, moves
 					for key in key_actions:
@@ -561,6 +551,8 @@ Press space to continue""" % self.score)
 			pygame.display.update()
 			
 			for event in pygame.event.get():
+				print "[numBlocks, totalBlockWeight, bumpiness, maxHeight, minHeight, meanHeight, varianceHeight, maxHoleHeight, numHoles, density, numRowsWithHoles, numColsWithHoles]"
+				print tetrisai.extractFeatures(self.board, self.stone)
 				if event.type == pygame.USEREVENT+1:
 					self.drop(False)
 				elif event.type == pygame.QUIT:
@@ -643,12 +635,18 @@ Press space to continue""" % self.score)
 if __name__ == '__main__':
 	# Run Normally
 	App = TetrisApp()
+	
 	weights = App.train_evaluation_function()
+
 	total = sum(weights)
+	
 	weights = [weight*1.0/total for weight in weights]
+	print "[numBlocks, totalBlockWeight, bumpiness, maxHeight, minHeight, meanHeight, varianceHeight, maxHoleHeight, numHoles, density, numRowsWithHoles, numColsWithHoles]"
 	print "FINAL", weights
 	App.run_greedy(weights)
+	
 	#App.run()
+
 
 	# Run Baseline for a certain number of trials
 	#for i in range(250):

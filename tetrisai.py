@@ -4,7 +4,7 @@ import numpy as np
 
 def extractFeatures(board, piece):
 
-	numBlocks = 0 
+	numBlocks = 0
 	b_width = len(board[0])
 	b_height = len(board)
 	totalBlockWeight = 0 
@@ -15,18 +15,19 @@ def extractFeatures(board, piece):
 	heights = [] 
 	for col in range(b_width):
 		found_top = False
-		for row in range(b_height):
+		for row in range(b_height - 1):
 			if board[row][col] != 0:
 				numBlocks += 1
-				totalBlockWeight += (b_height - row)
+				totalBlockWeight += (b_height - row - 1)
 			if not found_top and board[row][col] != 0:
 				found_top = True
-				heights.append(b_height - row)
+				heights.append(b_height - row - 1)
 			if found_top and board[row][col] == 0:
 				numHoles += 1
 				numHolesByRow[row] += 1
 				numHolesByCol[col] += 1
-
+			if row == b_height - 2 and board[row][col] == 0 and not found_top:
+				heights.append(0)
 	bumpiness = 0
 	maxHoleHeight = 0 
 	for i in range(len(heights)):
@@ -34,14 +35,14 @@ def extractFeatures(board, piece):
 			bumpiness += abs(heights[i]- heights[i-1])
 	for i in range(len(numHolesByRow)):
 		if numHolesByRow[i] > 0: 
-			maxHoleHeight = b_height - i
+			maxHoleHeight = b_height - i - 1
 			break
 
 	maxHeight = max(heights)
 	minHeight = min(heights)
 	meanHeight = np.average(heights)
 	varianceHeight = np.var(heights)
-	density = (numBlocks - numHoles)*1.0/numBlocks
+	density = (numBlocks)*1.0/(numBlocks + numHoles+ 0.0001)
 	numRowsWithHoles = sum(i > 0 for i in numHolesByRow)
 	numColsWithHoles = sum(i > 0 for i in numHolesByCol)
 
