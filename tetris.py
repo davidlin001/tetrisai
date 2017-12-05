@@ -378,10 +378,14 @@ class TetrisApp(object):
 			'SPACE':	self.start_game,
 			'RETURN':	self.insta_drop
 		}
+		#print "BEST SEQUENCE", bestSequence
 		original_score = 100 
 		#Maybe need to copy
 		original_board = copy.deepcopy(self.board)
 		original_stone = self.stone
+		original_stone_x = self.stone_x
+		original_stone_y = self.stone_y
+		original_lines = self.lines
 
 		#print "original"
 		#print original_board
@@ -391,17 +395,25 @@ class TetrisApp(object):
 		key_actions["RETURN"]()
 
 		features = tetrisai.extractFeatures(self.board, self.next_stone)
+		print "Features for attempt",
+		print features
+
 		score = self.test_evaluation_function(weights, features)
 		
 		print "attempted: sequence", actionSequence, "score", score
+		print "resulting board"
+		print self.board
 		# After trying the move, we have to revert everything
 		self.score = original_score
 		self.board = original_board
 		self.stone = original_stone
+		self.stone_x = original_stone_x
+		self.stone_y = original_stone_y
+		self.lines = original_lines
 		#print "new board"
 		#print self.board
 		if score < bestScore:
-			return score, actionSequence
+			return score, list(actionSequence)
 		else: 
 			return bestScore, bestSequence
 
@@ -418,6 +430,8 @@ class TetrisApp(object):
 		}
 		self.board = new_board()
 		self.score = 0 
+		self.lines = 0
+		self.level = 0 
 		self.gameover = False
 		self.paused = False
 		
@@ -466,8 +480,10 @@ Press space to continue""" % self.score)
 					print self.board
 					# Number of possible rotations, and translations
 					range_rotations = 3
-					range_left = self.stone_x 
-					range_right = len(self.board[0]) - (self.stone_x + len(self.stone[0]))
+					range_left = 6
+					range_right = 6
+					#range_left = self.stone_x 
+					#range_right = len(self.board[0]) - (self.stone_x + len(self.stone[0])) + 1
 
 					# Find best action sequence and its corresponding evaluation functino score
 					bestScore = 999999999999999
@@ -475,6 +491,21 @@ Press space to continue""" % self.score)
 					actionSequence = [] 
 
 					bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+					for i in range(range_rotations + 1):
+						bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+						for j in range(range_left):
+							actionSequence.append("LEFT")
+							bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+						actionSequence = actionSequence[0:len(actionSequence) - range_left]
+						for j in range(range_right):
+							actionSequence.append("RIGHT")
+							bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+						actionSequence = actionSequence[0:len(actionSequence) - range_right]
+						actionSequence.append("UP")
+					bestSequence.append("RETURN")
+					'''
+					actionSequence = [] 
+
 					for i in range(range_left):
 						actionSequence.append("LEFT")
 						bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
@@ -492,15 +523,19 @@ Press space to continue""" % self.score)
 						actionSequence = actionSequence[0:len(actionSequence) - range_rotations]
 
 					bestSequence.append("RETURN")
+					'''
 					for move in bestSequence:
 						key_actions[move]()
-					print "Executed: ", bestSequence, self.score
+					print "Executed: ", bestSequence, bestScore
+					print self.board
 					#print moves
 					#print self.board, moves
+					'''
 					for key in key_actions:
 						if event.key == eval("pygame.K_"
 						+key):
 							key_actions[key]()
+					'''
 			dont_burn_my_cpu.tick(10000)
 			
 			#dont_burn_my_cpu.tick(maxfps)
@@ -633,23 +668,27 @@ Press space to continue""" % self.score)
 			dont_burn_my_cpu.tick(maxfps)
 
 if __name__ == '__main__':
+	
 	# Run Normally
+	
 	App = TetrisApp()
 	
 	weights = App.train_evaluation_function()
-
 	total = sum(weights)
 	
-	weights = [weight*1.0/total for weight in weights]
+	#weights = [weight*1.0/total for weight in weights]
+	#HANDPICKED WEIGHTS
+	weights = [0,1,0.1,0,0,0,0,0,20,0,0,0]
 	print "[numBlocks, totalBlockWeight, bumpiness, maxHeight, minHeight, meanHeight, varianceHeight, maxHoleHeight, numHoles, density, numRowsWithHoles, numColsWithHoles]"
 	print "FINAL", weights
 	App.run_greedy(weights)
-	
+		
 	#App.run()
-
-
-	# Run Baseline for a certain number of trials
-	#for i in range(250):
-	#	App = TetrisApp()
-	#	App.run_baseline()
 	
+
+	def run_baseline(numIters):
+		for i in range(numIters):
+			App = TetrisApp()
+			App.run_baseline()
+
+	#run_baseline(100)
