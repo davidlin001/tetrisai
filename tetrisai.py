@@ -45,10 +45,12 @@ def extractFeatures(board, piece):
 	density = (numBlocks)*1.0/(numBlocks + numHoles+ 0.0001)
 	numRowsWithHoles = sum(i > 0 for i in numHolesByRow)
 	numColsWithHoles = sum(i > 0 for i in numHolesByCol)
+	diffHeight = maxHeight - minHeight
 
 
 
-
-	features = [numBlocks, totalBlockWeight, bumpiness, maxHeight, minHeight, meanHeight, meanHeight**2, varianceHeight, maxHoleHeight, numHoles, density, numRowsWithHoles, numColsWithHoles]
-
+	features = [diffHeight, numBlocks, totalBlockWeight, bumpiness, maxHeight, minHeight, meanHeight, meanHeight**2, varianceHeight, maxHoleHeight, numHoles, density, numRowsWithHoles, numColsWithHoles]
+	#features = [totalBlockWeight, numHoles, meanHeight, bumpiness, numBlocks]
+	#features = [numBlocks, totalBlockWeight, bumpiness, maxHeight, meanHeight, meanHeight**2, maxHoleHeight, numHoles, numRowsWithHoles, numColsWithHoles]
+	
 	return features
