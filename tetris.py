@@ -353,9 +353,9 @@ class TetrisApp(object):
 
 	def train_evaluation_function(self):
 		# EDIT THIS LATER!!!
-		lenFeatures = tetrisai.extractFeatures(self.board, self.piece)
+		lenFeatures = len(tetrisai.extractFeatures(self.board, self.stone))
 		weights = [0]*lenFeatures
-		numGames = 10
+		numGames = 25
 		for i in range(numGames):
 			print "GAME", i
 			weights = self.td_learning(weights)	
@@ -368,7 +368,7 @@ class TetrisApp(object):
 
 	# For every possible action sequence, we try the action and retrieve the score 
 	# of its successor
-	def trySequence(self, actionSequence, bestScore, bestSequence):
+	def trySequence(self, weights, actionSequence, bestScore, bestSequence):
 		key_actions = {
 			'ESCAPE':	self.quit,
 			'LEFT':		lambda:self.move(-1),
@@ -481,16 +481,16 @@ Press space to continue""" % self.score)
 				bestSequence = [] 
 				actionSequence = [] 
 
-				bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+				bestScore, bestSequence = self.trySequence(weights, actionSequence, bestScore, bestSequence) 
 				for i in range(range_rotations + 1):
-					bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+					bestScore, bestSequence = self.trySequence(weights, actionSequence, bestScore, bestSequence) 
 					for j in range(range_left):
 						actionSequence.append("LEFT")
-						bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+						bestScore, bestSequence = self.trySequence(weights, actionSequence, bestScore, bestSequence) 
 					actionSequence = actionSequence[0:len(actionSequence) - range_left]
 					for j in range(range_right):
 						actionSequence.append("RIGHT")
-						bestScore, bestSequence = self.trySequence(actionSequence, bestScore, bestSequence) 
+						bestScore, bestSequence = self.trySequence(weights, actionSequence, bestScore, bestSequence) 
 					actionSequence = actionSequence[0:len(actionSequence) - range_right]
 					actionSequence.append("UP")
 				bestSequence.append("RETURN")
@@ -689,24 +689,23 @@ if __name__ == '__main__':
 		App = TetrisApp()
 		App.run()
 
-	def run_greedy(weights):
+	def run_greedy(weights, numIters):
 		App = TetrisApp()
-
 		if (weights == []):
 			weights = App.train_evaluation_function()
-		#print "[numBlocks, totalBlockWeight, bumpiness, maxHeight, minHeight, meanHeight, meanHeight**2, 
-		# varianceHeight, maxHoleHeight, numHoles, density, numRowsWithHoles, numColsWithHoles]"
-		#print "FINAL", weights
-		App.run_greedy(weights)
+		print "[numBlocks, totalBlockWeight, bumpiness, maxHeight, minHeight, meanHeight, meanHeight**2, varianceHeight, maxHoleHeight, numHoles, density, numRowsWithHoles, numColsWithHoles]"
+		print "FINAL", weights
+		for i in range(numIters):
+			App = TetrisApp()
+			App.run_greedy(weights)
 
 	def run_baseline(numIters):
 		for i in range(numIters):
 			App = TetrisApp()
 			App.run_baseline()
 
+	run_greedy([],25)
 	#Fire HANDPICKED WEIGHTS
 	#weights = [0,1,0.25,0,0,0,0.5,0,0,5,0,0,0]
-	for i in range(25):
-		run_greedy(weights)
 
 	#run_baseline(100)
