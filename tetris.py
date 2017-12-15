@@ -635,8 +635,8 @@ Press space to continue""" % self.score)
 			if self.gameover:
 				self.center_msg("""Game Over!\nYour score: %d
 Press space to continue""" % self.score)
-				print "SCORE", self.score, "LINES", self.lines
-				break
+				#print "SCORE", self.score, "LINES", self.lines
+				return self.score, self.lines
 			else:
 				if self.paused:
 					self.center_msg("Paused")
@@ -807,37 +807,40 @@ Press space to continue""" % self.score)
 			#dont_burn_my_cpu.tick(10000)
 			dont_burn_my_cpu.tick(maxfps)
 
+# Run Tetris Normally: You play
+def run_normal():
+	App = TetrisApp()
+	App.run()
+
+# Run Greedy. If weights is [], trains with TD. Otherwises uses weights
+# Plays automatically according to greedy. 
+def run_greedy(weights, numIters):
+	App = TetrisApp()
+	if (weights == []):
+		weights = App.train_evaluation_function()
+	#print "[numBlocks, totalBlockWeight, bumpiness, maxHeight, minHeight, meanHeight, meanHeight**2, varianceHeight, maxHoleHeight, numHoles, density, numRowsWithHoles, numColsWithHoles]"
+	#print "FINAL", weights
+	score, linesCleared = 0, 0
+	for i in range(numIters):
+		App = TetrisApp()
+		score, linesCleared = App.run_greedy(weights)
+		print "SCORE:", score, "LINES CLEARED:", linesCleared
+	return score, linesCleared
+
+# Runs Baselines automatically for numIters iterations 
+def run_baseline(numIters):
+	for i in range(numIters):
+		App = TetrisApp()
+		App.run_baseline()
+
 if __name__ == '__main__':
-	# Run Tetris Normally: You play
-	def run_normal():
-		App = TetrisApp()
-		App.run()
-
-	# Run Greedy. If weights is [], trains with TD. Otherwises uses weights
-	# Plays automatically according to greedy. 
-	def run_greedy(weights, numIters):
-		App = TetrisApp()
-		if (weights == []):
-			weights = App.train_evaluation_function()
-		#print "[numBlocks, totalBlockWeight, bumpiness, maxHeight, minHeight, meanHeight, meanHeight**2, varianceHeight, maxHoleHeight, numHoles, density, numRowsWithHoles, numColsWithHoles]"
-		#print "FINAL", weights
-		for i in range(numIters):
-			App = TetrisApp()
-			App.run_greedy(weights)
-
-	# Runs Baselines automatically for numIters iterations 
-	def run_baseline(numIters):
-		for i in range(numIters):
-			App = TetrisApp()
-			App.run_baseline()
-
-
 	#run_greedy([],10)
 	#run_normal()
 	#Fire HANDPICKED WEIGHTS
-	App = TetrisApp()
+	#App = TetrisApp()
+	genetic_weights = [-0.225308157467, -0.423406394189, 0.129271775997, 0.157856639312, 0,0,0,0.332319029342, 0,0, 0.55599685547,0,0,0]
 	#weights = [1, 0,1,0.25,0,0,0,3,0,0,3,0,0,0]
-	tdweights = [0.00085946930911114528, 0.071334321710978033, 0.71291427857754686, 0.0017189386348200899, 0.0085945072887023532, 0.0077350379795912061, 0.0082077450672657284, 0.15676812309855659, 0.00012462108839623112, 0.0081647829740243687, 0.010743128961679243, 0.00037347745709833264, 0.0081647829740243687, 0.0042972433127580999]
-	#run_greedy(weights, 25)
-	App.run_depth2(tdweights)
+	#tdweights = [0.00085946930911114528, 0.071334321710978033, 0.71291427857754686, 0.0017189386348200899, 0.0085945072887023532, 0.0077350379795912061, 0.0082077450672657284, 0.15676812309855659, 0.00012462108839623112, 0.0081647829740243687, 0.010743128961679243, 0.00037347745709833264, 0.0081647829740243687, 0.0042972433127580999]
+	run_greedy(genetic_weights, 25)
+	#App.run_depth2(tdweights)
 	#run_baseline(25)
