@@ -1,9 +1,9 @@
 import random 
 import tetris
-
+import copy
 populationSize = 50
 mutationRate = 0.15
-mutationStep = 0.2
+mutationStep = 0.25
 
 def initializePopulation():
 	population = [] 
@@ -43,17 +43,17 @@ def evaluatePopulation(population):
 
 def evolve(population):
 	population.sort(key = lambda x: x['fitness'])
-	population = population[populationSize/2:]
+	population = population[7*populationSize/10:]
 	#print_summary(population)
-	children = []
+	children = []#copy.copy(population)
 	numParents = len(population) 
 	def getRandomChromosome():
 		return random.randint(0, numParents-1)
 
-	while (len(population) < populationSize):
-		population.append(makeBaby(population[getRandomChromosome()], population[getRandomChromosome()]))
+	while (len(children) < populationSize):
+		children.append(makeBaby(population[getRandomChromosome()], population[getRandomChromosome()]))
 
-	return population
+	return children
 
 def makeBaby(mama, pops):
 	child = {
@@ -91,12 +91,13 @@ def print_summary(population):
 		cur = population[i]
 		print i, cur['bumpiness'], cur["numHoles"], cur["maxHeightSquared"], cur["numBlocks"], cur["totalBlockWeight"], cur["heightRange"], cur["fitness"]
 		average += cur['fitness']
-		if cur['fitness'] > best:
+		if cur['fitness'] > bestScore:
 			bestIndex = i 
 			bestScore = cur['fitness']
 	average = 1.0*average/len(population)
 	print "Average Lines Cleared: ", average
-	print "Best Chromosome", bestIndex, "Lines Cleared", bestScore
+	print "Best Chromosome:", bestIndex, "Lines Cleared:", bestScore
+
 if __name__ == '__main__':
 	run_genetic_algorithm(10)
 
